@@ -19,7 +19,7 @@ setup(
     test_suite="tests",
     tests_require=["pytest"],
 
-    description="Library for making command-style user interfaces.",
+    description="Alternative Python debugger using prompt-toolkit.",
     long_description_content_type="text/markdown",
     long_description=LONG_DESCRIPTION,
     license="Apache 2.0",

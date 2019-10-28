@@ -9,7 +9,7 @@ from botfly import debugger
 pytarget =  sys.argv[1] if len(sys.argv) > 1 else None
 
 if not pytarget:
-    print('Usage: eldb <module or file>')
+    print('Usage: botflydb <module or file>')
     sys.exit(64)  # EX_USAGE
 
 
