@@ -252,7 +252,8 @@ class Debugger(bdb.Bdb):
         self.forget()
         self._parser = None
         if self._ui is None:
-            pass  # XXX
+            self._ui = ui.UserInterface(self._io)
+            self._ui.register_expansion("S", self._expansions)
 
     def _expansions(self, c):
         if c == "S":  # current frame over total frames in backtrace
@@ -558,6 +559,7 @@ def lasti2lineno(code, lasti):
 
 
 class DebuggerParser(parser.CommandParser):
+
     def initialize(self):
         ANY = ui.ANY
         f = ui.FSM(0)

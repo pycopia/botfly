@@ -18,9 +18,8 @@ has a docstring becomes a command with the same name. The docstring is the help
 text, and also defines the command options.
 """
 
-__all__ = ['BaseCommands', 'ObjectCommands']
+__all__ = ['BaseCommands']
 
-import sys
 import textwrap
 import functools
 from types import MethodType
@@ -38,10 +37,10 @@ class BaseCommands:
         self._aliases = aliases or {}
         self._environ.setdefault("PS1", str(prompt))
 
-    def clone(self, cliclass=None, theme=None):
+    def clone(self, cliclass=None):
         if cliclass is None:
             cliclass = self.__class__
-        newui = self._ui.clone(theme)
+        newui = self._ui.clone()
         return cliclass(newui, aliases=self._aliases)
 
     @classmethod
@@ -238,59 +237,6 @@ class BaseCommands:
             del self._aliases[arguments["<name>"]]
         except (IndexError, KeyError):
             self._ui.print("unalias: {}: not found".format(arguments["<name>"]))
-
-
-class ObjectCommands(BaseCommands):
-    """Commands that wraps an object with methods that commands may call.
-    """
-    def __init__(self, ui, instance, aliases=None, prompt="> "):
-        super().__init__(ui, aliases=aliases, prompt=prompt)
-        self.setup(instance, prompt=prompt)
-
-    def setup(self, newinstance, prompt=None):
-        if prompt is None:
-            prompt = "%Y{}%N> ".format(newinstance.__class__.__name__)
-        self._environ["PS1"] = prompt
-        self._obj = newinstance
-
-    def clone(self, cliclass=None, theme=None):
-        if cliclass is None:
-            cliclass = self.__class__
-        newui = self._ui.clone(theme)
-        return cliclass(newui, self._obj, aliases=self._aliases)
-
-    @classmethod
-    def clone_from(cls, other):
-        newui = other._ui.clone()
-        return cls(newui, other._obj, aliases=other._aliases)
-
-    def _get_namespace(self):
-        try:
-            ns = vars(self._obj)
-        except:  # noqa
-            ns = globals()
-        return ns
-
-    def ls(self, arguments):
-        """List attributes of wrapped object.
-        """
-        for name in dir(self._obj):
-            attr = getattr(self._obj, name)
-            self._ui.print(name, ":", repr(attr))
-
-    def call(self, arguments):
-        """Call a method on the wrapped object.
-
-        Usage:
-            call <methodname> [<args>...]
-        """
-        name = arguments["<methodname>"]
-        args, kwargs = evaluate_arguments(arguments["<args>"],
-                                          self._get_namespace())
-        meth = getattr(self._obj, name)
-        r = meth(*args, **kwargs)
-        self._ui.print(repr(r))
-        return r
 
 
 def evaluate_arguments(argv, namespace=None):

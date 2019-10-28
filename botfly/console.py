@@ -59,6 +59,7 @@ class ConsoleIO:
 
     def print(self, *args, **kwargs):
         kwargs.pop("file", None)
+        args = tuple([prompt_toolkit.ANSI(i) for i in args])
         prompt_toolkit.shortcuts.print_formatted_text(*args, **kwargs, file=self.stdout)
 
     def close(self):

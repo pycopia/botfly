@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-User Interface base classes and themes.
+User Interface base classes.
 """
 
 __all__ = ['UserInterface']
@@ -24,18 +24,94 @@ import time
 import textwrap
 from pprint import PrettyPrinter
 
+from prompt_toolkit import ANSI
+
 from .fsm import FSM, ANY
 
-PROMPT_START_IGNORE = '\001'
-PROMPT_END_IGNORE = '\002'
+
+RESET = NORMAL = "\x1b[0m"
+BLACK = "\x1b[30m"
+RED = "\x1b[31m"
+GREEN = "\x1b[32m"
+YELLOW = "\x1b[33m"
+BLUE = "\x1b[34m"
+MAGENTA = "\x1b[35m"
+CYAN = "\x1b[36m"
+GREY = "\x1b[37m"
+LT_RED = "\x1b[31;01m"
+LT_GREEN = "\x1b[32;01m"
+LT_YELLOW = "\x1b[33;01m"
+LT_BLUE = "\x1b[34;01m"
+LT_MAGENTA = "\x1b[35;01m"
+LT_CYAN = "\x1b[36;01m"
+LT_GREY = WHITE = "\x1b[37;01m"
+BRIGHT = "\x1b[01m"
+UNDERSCORE = "\x1b[4m"
+BLINK = "\x1b[5m"
+DEFAULT = "\x1b[39;49m"
+
+
+class Theme:
+
+    # ANSI escapes for color terminals
+    NORMAL = RESET = RESET
+    BOLD = BRIGHT = BRIGHT
+    BLACK = BLACK
+    RED = RED
+    GREEN = GREEN
+    YELLOW = YELLOW
+    BLUE = BLUE
+    MAGENTA = MAGENTA
+    CYAN = CYAN
+    WHITE = GREY
+    GREY = GREY
+    BRIGHTRED = LT_RED
+    BRIGHTGREEN = LT_GREEN
+    BRIGHTYELLOW = LT_YELLOW
+    BRIGHTBLUE = LT_BLUE
+    BRIGHTMAGENTA = LT_MAGENTA
+    BRIGHTCYAN = LT_CYAN
+    BRIGHTWHITE = WHITE
+    DEFAULT = DEFAULT
+    UNDERSCORE = UNDERSCORE
+    BLINK = BLINK
+    HELP_TEXT = BRIGHTWHITE
+
+    def __init__(self, ps1="%gDebug%N:%y%S>%N ", ps2="more> ", ps3="choose", ps4="-> "):
+        self._ps1 = ps1  # main prompt
+        self._ps2 = ps2  # more input needed
+        self._ps3 = ps3  # choose prompt
+        self._ps4 = ps4  # input prompt
+
+    def _set_ps1(self, new):
+        self._ps1 = str(new)
+
+    def _set_ps2(self, new):
+        self._ps2 = str(new)
+
+    def _set_ps3(self, new):
+        self._ps3 = str(new)
+
+    def _set_ps4(self, new):
+        self._ps4 = str(new)
+
+    ps1 = property(lambda s: s._ps1, _set_ps1, None, "primary prompt")
+    ps2 = property(lambda s: s._ps2, _set_ps2, None, "more input needed")
+    ps3 = property(lambda s: s._ps3, _set_ps3, None, "choose prompt")
+    ps4 = property(lambda s: s._ps4, _set_ps4, None, "text input prompt")
 
 
 class UserInterface:
     """An ANSI terminal user interface for CLIs.  """
-    def __init__(self, io, theme):
+    def __init__(self, io, env=None):
         self._io = io
-        self.environ = os.environ.copy()
+        self._theme = theme = Theme()
+        self.environ = env or os.environ.copy()
         self.environ["_"] = None
+        self.environ["PS1"] = theme.ps1
+        self.environ["PS2"] = theme.ps2
+        self.environ["PS3"] = theme.ps3
+        self.environ["PS4"] = theme.ps4
         self._cache = {}
         self._initfsm()
         self._printer = PrettyPrinter(indent=1, width=self._io.columns,
@@ -54,8 +130,8 @@ class UserInterface:
             self._io.close()
             self._io = None
 
-    def clone(self, theme=None):
-        return self.__class__(self._io, self.environ.copy(), theme or self._theme)
+    def clone(self):
+        return self.__class__(self._io, self.environ.copy())
 
     def print(self, *objs, **kwargs):
         self._io.print(*objs, **kwargs)
@@ -87,7 +163,7 @@ class UserInterface:
 
     # user input
     def _get_prompt(self, name, prompt=None):
-        return self._input_prompt_format(prompt or self.environ[name])
+        return ANSI(self._input_prompt_format(prompt or self.environ[name]))
 
     def _input_prompt_format(self, ps):
         self._fsm.process_string(ps)
@@ -123,7 +199,7 @@ class UserInterface:
             return color + s + self._theme.NORMAL + "\n"
 
     def print_doc(self, doc):
-        self.print(self._format_doc(doc, self._theme.help_text))
+        self.print(self._format_doc(doc, self._theme.HELP_TEXT))
 
     def prompt_format(self, ps):
         "Expand percent-exansions in a string and return the result."
@@ -143,7 +219,6 @@ class UserInterface:
         key = str(key)[0]
         if key not in self._PROMPT_EXPANSIONS:
             self._PROMPT_EXPANSIONS[key] = func
-            self._FORMAT_EXPANSIONS[key] = func
         else:
             raise ValueError("expansion key !r{} already exists.".format(key))
 
@@ -151,7 +226,6 @@ class UserInterface:
         key = str(key)[0]
         try:
             del self._PROMPT_EXPANSIONS[key]
-            del self._FORMAT_EXPANSIONS[key]
         except KeyError:
             pass
 
@@ -159,35 +233,7 @@ class UserInterface:
     def _initfsm(self):
         # maps percent-expansion items to some value.
         theme = self._theme
-        # Used in prompt strings given to readline library.
         self._PROMPT_EXPANSIONS = {
-            "I": PROMPT_START_IGNORE + theme.BRIGHT + PROMPT_END_IGNORE,
-            "N": PROMPT_START_IGNORE + theme.NORMAL + PROMPT_END_IGNORE,
-            "D": PROMPT_START_IGNORE + theme.DEFAULT + PROMPT_END_IGNORE,
-            "R": PROMPT_START_IGNORE + theme.BRIGHTRED + PROMPT_END_IGNORE,
-            "G": PROMPT_START_IGNORE + theme.BRIGHTGREEN + PROMPT_END_IGNORE,
-            "Y": PROMPT_START_IGNORE + theme.BRIGHTYELLOW + PROMPT_END_IGNORE,
-            "B": PROMPT_START_IGNORE + theme.BRIGHTBLUE + PROMPT_END_IGNORE,
-            "M": PROMPT_START_IGNORE + theme.BRIGHTMAGENTA + PROMPT_END_IGNORE,
-            "C": PROMPT_START_IGNORE + theme.BRIGHTCYAN + PROMPT_END_IGNORE,
-            "W": PROMPT_START_IGNORE + theme.BRIGHTWHITE + PROMPT_END_IGNORE,
-            "r": PROMPT_START_IGNORE + theme.RED + PROMPT_END_IGNORE,
-            "g": PROMPT_START_IGNORE + theme.GREEN + PROMPT_END_IGNORE,
-            "y": PROMPT_START_IGNORE + theme.YELLOW + PROMPT_END_IGNORE,
-            "b": PROMPT_START_IGNORE + theme.BLUE + PROMPT_END_IGNORE,
-            "m": PROMPT_START_IGNORE + theme.MAGENTA + PROMPT_END_IGNORE,
-            "c": PROMPT_START_IGNORE + theme.CYAN + PROMPT_END_IGNORE,
-            "w": PROMPT_START_IGNORE + theme.WHITE + PROMPT_END_IGNORE,
-            "n": "\n",
-            "h": self._hostname,
-            "u": self._username,
-            "d": self._cwd,
-            "L": self._shlvl,
-            "t": self._time,
-            "T": self._date,
-        }
-
-        self._FORMAT_EXPANSIONS = {
             "I": theme.BRIGHT,
             "N": theme.NORMAL,
             "D": theme.DEFAULT,
@@ -268,16 +314,13 @@ class UserInterface:
         fsm.bgcol += c
 
     def _setfg(self, c, fsm):
-        fsm.arg += (PROMPT_START_IGNORE + "\x1b[38;5;" + fsm.fgcol + "m" + PROMPT_END_IGNORE)
+        fsm.arg += ("\x1b[38;5;" + fsm.fgcol + "m")
 
     def _setbg(self, c, fsm):
-        fsm.arg += (PROMPT_START_IGNORE + "\x1b[48;5;" + fsm.bgcol + "m" + PROMPT_END_IGNORE)
+        fsm.arg += ("\x1b[48;5;" + fsm.bgcol + "m")
 
     def _prompt_expand(self, c, fsm):
         return self._expand(c, fsm, self._PROMPT_EXPANSIONS)
-
-    def _format_expand(self, c, fsm):
-        return self._expand(c, fsm, self._FORMAT_EXPANSIONS)
 
     def _expand(self, c, fsm, mapping):
         try:
