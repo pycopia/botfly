@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+
+import sys
+import os
+import runpy
+
+from botfly import debugger
+
+pytarget =  sys.argv[1] if len(sys.argv) > 1 else None
+
+if not pytarget:
+    print('Usage: eldb <module or file>')
+    sys.exit(64)  # EX_USAGE
+
+
+def debugger_hook(exc, value, tb):
+    if (not hasattr(sys.stderr, "isatty") or
+        not sys.stderr.isatty() or exc in (SyntaxError,
+                                           IndentationError,
+                                           KeyboardInterrupt)):
+        sys.__excepthook__(exc, value, tb)
+    else:
+        print("Uncaught exception:", exc.__name__, ":", value, file=sys.stderr)
+        debugger.from_exception(value)
+
+sys.excepthook = debugger_hook
+
+del sys.argv[0]
+
+if os.path.exists(pytarget):
+    sys.path[0] = os.path.dirname(pytarget)
+    runpy.run_path(pytarget, run_name="__main__")
+else:
+    # Assume module name if no file.
+    runpy._run_module_as_main(sys.argv[0])
+
