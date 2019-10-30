@@ -12,7 +12,9 @@ with open('README.md') as fo:
 setup(
     name=NAME,
     packages=["botfly"],
-    install_requires=[],
+    install_requires=[
+        "prompt_toolkit",
+    ],
     scripts=glob("bin/*"),
     setup_requires=["setuptools_scm"],
     use_scm_version=True,
@@ -31,9 +33,7 @@ setup(
         "Environment :: Console",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
-        "Operating System :: POSIX",
         "Programming Language :: Python :: 3 :: Only",
-        "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Software Development :: Debuggers",
     ],
 )
