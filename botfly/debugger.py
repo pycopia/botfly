@@ -1220,6 +1220,7 @@ _DEFAULT_ALIASES = {
     "s": ["step"],
     "c": ["cont"],
     "ret": ["returns"],
+    "dis": ["disassemble"],
     "r": ["returns"],
     "u": ["up"],
     "d": ["down"],

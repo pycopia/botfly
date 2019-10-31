@@ -44,7 +44,7 @@ LT_YELLOW = "\x1b[33;01m"
 LT_BLUE = "\x1b[34;01m"
 LT_MAGENTA = "\x1b[35;01m"
 LT_CYAN = "\x1b[36;01m"
-LT_GREY = WHITE = "\x1b[37;01m"
+LT_GREY = "\x1b[37;01m"
 BRIGHT = "\x1b[01m"
 UNDERSCORE = "\x1b[4m"
 BLINK = "\x1b[5m"
@@ -54,8 +54,10 @@ DEFAULT = "\x1b[39;49m"
 class Theme:
 
     # ANSI escapes for color terminals
-    NORMAL = RESET = RESET
-    BOLD = BRIGHT = BRIGHT
+    NORMAL = RESET
+    DEFAULT = DEFAULT
+    BOLD = BRIGHT
+    BRIGHT = BRIGHT
     BLACK = BLACK
     RED = RED
     GREEN = GREEN
@@ -72,7 +74,6 @@ class Theme:
     BRIGHTMAGENTA = LT_MAGENTA
     BRIGHTCYAN = LT_CYAN
     BRIGHTWHITE = LT_GREY
-    DEFAULT = DEFAULT
     UNDERSCORE = UNDERSCORE
     BLINK = BLINK
     HELP_TEXT = BRIGHTWHITE
@@ -153,7 +154,7 @@ class UserInterface:
 
     def printf(self, text):
         "Print text run through the expansion formatter."
-        self.write(self.prompt_format(text))
+        self._io.print(self.prompt_format(text), end="")
 
     def error(self, text):
         self.printf("%r{}%N\n".format(text))
