@@ -1,5 +1,4 @@
-#!/usr/bin/env python3.5
-# vim:ts=4:sw=4:softtabstop=4:smarttab:expandtab
+# python3
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +19,8 @@ Controller component module.
 __all__ = ['CommandController']
 
 import sys
+
+from prompt_toolkit.completion import DummyCompleter
 
 from . import commands
 from . import exceptions
@@ -42,7 +43,6 @@ class CommandController:
     def __init__(self, commands):
         self.commands = commands
         self._completion_scopes = {}
-        self._completers = []
         self._command_list = None
         self._ui = commands._ui
         self.environ = self._ui.environ
@@ -60,20 +60,14 @@ class CommandController:
         self.commands.finalize()
 
     # completer management methods
-    def add_completion_scope(self, name, complist):
-        self._completion_scopes[name] = list(complist)
+    def add_completion_scope(self, name, completer):
+        self._completion_scopes[name] = completer
 
     def get_completion_scope(self, name):
-        return self._completion_scopes.get(name, [])
+        return self._completion_scopes.get(name, DummyCompleter())
 
     def remove_completion_scope(self, name):
         del self._completion_scopes[name]
-
-    def push_completer(self, completer):
-        pass  # TODO
-
-    def pop_completer(self):
-        pass  # TODO
 
     def getarg(self, argv, index, default=None):
         return argv[index] if len(argv) > index else default
@@ -143,5 +137,3 @@ class CommandController:
         if self._command_list is None:
             self._command_list = commands.get_command_list(self.commands)
         return self._command_list
-
-# vim:ts=4:sw=4:softtabstop=4:smarttab:expandtab

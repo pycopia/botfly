@@ -54,12 +54,12 @@ class ConsoleIO:
     def _winch_handler(self, sig, st):
         self.set_size()
 
-    def input(self, prompt="> "):
-        return self._ps.prompt(prompt)
+    def input(self, prompt="> ", completer=None):
+        return self._ps.prompt(prompt, completer=completer)
 
     def print(self, *args, **kwargs):
         kwargs.pop("file", None)
-        args = tuple([prompt_toolkit.ANSI(i) for i in args])
+        args = tuple([prompt_toolkit.ANSI(str(i)) for i in args])
         prompt_toolkit.shortcuts.print_formatted_text(*args, **kwargs, file=self.stdout)
 
     def close(self):

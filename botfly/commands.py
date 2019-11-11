@@ -283,5 +283,3 @@ def _command_filt(cmd, objname):
         return 1
     else:
         return 0
-
-# vim:ts=4:sw=4:softtabstop=4:smarttab:expandtab

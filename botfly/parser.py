@@ -18,14 +18,28 @@ __all__ = ['CommandParser']
 import sys
 import os
 
+from prompt_toolkit.completion import Completer, Completion
+
 from . import exceptions
 from . import controller
 from .fsm import FSM, ANY
 
 
+class CommandCompleter(Completer):
+
+    def __init__(self, words):
+        self.words = words
+
+    def get_completions(self, document, complete_event):
+        word_before_cursor = document.text_before_cursor
+        for word in self.words:
+            if word.startswith(word_before_cursor):
+                yield Completion(word, -len(word_before_cursor), display_meta='command')
+
+
 class CommandParser:
     """Reads an IO stream and parses input similar to POSIX shell syntax.
-    Calls command methods for each line. Handles completer.
+    Calls command methods for each line.
     """
 
     VARCHARS = r'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_?'
@@ -58,8 +72,8 @@ class CommandParser:
         self._controllers.append(newcontroller)
         self._controller = newcontroller  # current command holder
         cmdlist = newcontroller.get_command_names()
-        newcontroller.add_completion_scope("commands", cmdlist)
-        newcontroller.add_completion_scope("help", cmdlist)
+        newcontroller.add_completion_scope("commands", CommandCompleter(cmdlist))
+        newcontroller.add_completion_scope("help", CommandCompleter(cmdlist))
 
     def pop_controller(self, returnval=None):
         cont = self._controllers.pop()
@@ -71,26 +85,13 @@ class CommandParser:
         else:
             raise exceptions.CommandQuit("last command object quit.")
 
-    def parse(self, url):
-        import urllib
-        fo = urllib.urlopen(url)
-        try:
-            self.parse_file(fo)
-        finally:
-            fo.close()
-
-    def parse_file(self, fo):
-        data = fo.read(4096)
-        while data:
-            self.feed(data)
-            data = fo.read(4096)
-
     def interact(self):
         try:
             while 1:
                 ui = self._controller._ui
                 try:
-                    line = ui.user_input()
+                    line = ui.user_input(
+                            completer=self._controller.get_completion_scope("commands"))
                     if not line:
                         continue
                     while self.feed(line + "\n"):

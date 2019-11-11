@@ -25,6 +25,7 @@ import textwrap
 from pprint import PrettyPrinter
 
 from prompt_toolkit import ANSI
+from prompt_toolkit.completion import DummyCompleter
 
 from .fsm import FSM, ANY
 
@@ -170,8 +171,9 @@ class UserInterface:
         self._fsm.process_string(ps)
         return self._getarg()
 
-    def user_input(self, prompt=None):
-        return self._io.input(self._get_prompt("PS1", prompt))
+    def user_input(self, prompt=None, completer=None):
+        return self._io.input(self._get_prompt("PS1", prompt),
+                              completer=(completer or DummyCompleter()))
 
     def more_user_input(self):
         return self._io.input(self._get_prompt("PS2"))

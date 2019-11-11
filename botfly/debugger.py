@@ -322,7 +322,7 @@ class Debugger(bdb.Bdb):
             self.interaction(frame, None)
 
     def message(self, message):
-            self._ui.print(message)
+        self._ui.print(message)
 
     def user_line(self, frame):
         """This function is called when we stop or break at this line."""
@@ -912,32 +912,6 @@ class DebuggerCommands(commands.BaseCommands):
             self._obj._parser = None
             raise exceptions.CommandQuit()
 
-    def jump(self, arguments):
-        """Set the next line that will be executed.
-
-        Usage:
-            jump <lineno>
-        """
-        if self._obj.curindex + 1 != len(self._obj.stack):
-            self._ui.print("*** You can only jump within the bottom frame")
-            return
-        try:
-            lineno = int(arguments["<lineno>"])
-        except ValueError:
-            self._ui.print("*** The 'jump' command requires a line number.")
-        else:
-            try:
-                # Do the jump, fix up our copy of the stack, and display the
-                # new position
-                self._obj.curframe.f_lineno = lineno
-                self._obj.stack[self._obj.curindex] = \
-                    self._obj.stack[self._obj.curindex][0], lineno
-                self._obj.print_stack_entry(self._obj.stack[self._obj.curindex])
-            except ValueError as e:
-                self._ui.print('*** Jump failed:', e)
-            else:
-                self._reset_namespace()
-
     def switch(self, arguments):
         """Switch to the context exception.
 
@@ -1126,9 +1100,9 @@ class DebuggerCommands(commands.BaseCommands):
             v = sys.exc_info()[1]
             self._ui.printf('*** %R{}%N: {}\n'.format(type(v).__name__, v))
             return
+
         if inspect.ismodule(value):
-            filename = value.__file__ if value.__file__ else "builtin module"
-            self._ui.print('Module:', filename)
+            self._ui.print(str(value))
         elif inspect.isasyncgenfunction(value):
             self._ui.print('Async Gen function:', value.__name__, inspect.signature(value))
         elif inspect.isasyncgen(value):
@@ -1162,7 +1136,7 @@ class DebuggerCommands(commands.BaseCommands):
             self._ui.print('Data descriptor:', value.__name__)
         # None of the above...
         else:
-            self._ui.print("Type of:", type(value))
+            self._ui.print(repr(type(value)))
 
     def search(self, arguments):
         """Search the source file for the regular expression pattern.
@@ -1312,7 +1286,7 @@ def debugger_hook(exc, value, tb):
                                            KeyboardInterrupt)):
         sys.__excepthook__(exc, value, tb)
     else:
-        post_mortem(tb)
+        from_exception(value)
 
 
 def autodebug(on=True):
