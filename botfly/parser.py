@@ -177,7 +177,7 @@ class CommandParser:
         else:
             fsm.push(c)
         try:
-            val = self._controller.environ.expand(fsm.varname)
+            val = self._controller.environ.get(fsm.varname, "")
         except:  # noqa
             ex, val, tb = sys.exc_info()
             self._controller._ui.error("Could not expand variable "

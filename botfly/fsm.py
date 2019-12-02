@@ -44,7 +44,7 @@ class FSM:
         self.stack.append(obj)
 
     def pop(self):
-        self.stack.pop()
+        return self.stack.pop()
 
     def add_default_transition(self, action, next_state):
         if action is None and next_state is None:
